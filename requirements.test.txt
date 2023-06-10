@@ -1,3 +1,5 @@
 pytest
 pytest-cov==2.9.0
 pytest-homeassistant-custom-component
+
+beewi-smartcli-ble==0.2.0
