@@ -1,5 +1,5 @@
 pytest
-pytest-cov==2.9.0
+pytest-cov
 pytest-homeassistant-custom-component
 
 beewi-smartclim-ble==0.2.0
