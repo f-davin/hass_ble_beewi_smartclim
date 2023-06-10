@@ -1,0 +1,11 @@
+{
+  "codeowners": ["f-davin"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/f-davin/hass_ble_beewi_smartclim.git",
+  "domain": "ble_beewi_smartclim",
+  "iot_class": "local_push",
+  "name": "BeeWi SmartClim",
+  "requirements": [],
+  "version": "1.0.0"
+}
