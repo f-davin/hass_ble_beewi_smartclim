@@ -14,6 +14,6 @@
   "iot_class": "local_push",
   "loggers": ["ble_beewi_smartclim"],
   "name": "BeeWi SmartClim",
-  "requirements": ["beewi-smartcli-ble==0.2.0"],
+  "requirements": ["beewi-smartclim-ble==0.2.0"],
   "version": "1.0.0"
 }
