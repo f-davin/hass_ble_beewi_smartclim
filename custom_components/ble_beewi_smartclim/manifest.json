@@ -1,4 +1,6 @@
 {
+  "domain": "ble_beewi_smartclim",
+  "name": "BeeWi SmartClim",
   "bluetooth": [
     {
       "connectable": false,
@@ -9,11 +11,9 @@
   "config_flow": true,
   "dependencies": ["bluetooth_adapters"],
   "documentation": "https://github.com/f-davin/hass_ble_beewi_smartclim",
-  "domain": "ble_beewi_smartclim",
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/f-davin/hass_ble_beewi_smartclim/issues",
   "loggers": ["ble_beewi_smartclim"],
-  "name": "BeeWi SmartClim",
   "requirements": ["beewi-smartclim-ble==0.3.0"],
   "version": "1.0.0"
 }
