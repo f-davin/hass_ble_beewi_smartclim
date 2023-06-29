@@ -19,7 +19,7 @@ from homeassistant.components.sensor import (
 )
 from homeassistant.const import ATTR_NAME, PERCENTAGE, UnitOfTemperature, UnitOfTime
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import DEVICE_CLASS_NAME, DeviceInfo
+from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 from smartclim_ble import BeeWiSmartClimAdvertisement
 
@@ -74,10 +74,6 @@ def sensor_update_to_bluetooth_data_update(
     """Convert a sensor update to a Bluetooth data update."""
     entity_names: dict[PassiveBluetoothEntityKey, str | None] = {}
     for key, desc in SENSOR_DESCRIPTIONS.items():
-        # PassiveBluetoothDataUpdate does not support DEVICE_CLASS_NAME
-        # the assert satisfies the type checker and will catch attempts
-        # to use DEVICE_CLASS_NAME in the entity descriptions.
-        assert desc.name is not DEVICE_CLASS_NAME
         entity_names[_device_key_to_bluetooth_entity_key(adv.device, key)] = desc.name
 
     return PassiveBluetoothDataUpdate(

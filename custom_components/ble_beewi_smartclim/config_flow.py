@@ -1,29 +1,34 @@
 """Config flow for BeeWi SmartClim integration."""
 
-from __future__ import annotations
 
 import logging
 from typing import Any
 
-from homeassistant import config_entries
+from homeassistant import config_entries, data_entry_flow
 from homeassistant.components.bluetooth import (
     BluetoothServiceInfoBleak,
     async_discovered_service_info,
 )
-from homeassistant.const import CONF_ADDRESS
+from homeassistant.const import CONF_MAC, CONF_NAME
 from homeassistant.data_entry_flow import FlowResult
+from homeassistant.helpers import config_validation as cv
 from smartclim_ble import BeeWiSmartClimAdvertisement, SmartClimSensorData
 import voluptuous as vol
 
-from .const import DOMAIN
+from .const import DEFAULT_DEVICE_MAC, DEFAULT_DEVICE_NAME, DOMAIN
 
 _LOGGER = logging.getLogger(__name__)
 
+DEVICE_SCHEMA = vol.Schema ({
+    vol.Optional(CONF_MAC, default=DEFAULT_DEVICE_MAC): cv.string,
+    vol.Optional(CONF_NAME, default=DEFAULT_DEVICE_NAME): cv.string,
+})
 
 class SmartClimConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for BeeWi SmartClim."""
 
     VERSION = 1
+    CONNECTION_CLASS = config_entries.CONN_CLASS_LOCAL_PUSH
 
     def __init__(self) -> None:
         """Set up a new config flow for BeeWi SmartClim."""
@@ -31,47 +36,18 @@ class SmartClimConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         self._discovered_device: BeeWiSmartClimAdvertisement | None = None
         self._discovered_devices: dict[str, str] = {}
 
-    async def async_step_bluetooth(
-        self, discovery_info: BluetoothServiceInfoBleak
-    ) -> FlowResult:
-        """Handle the Bluetooth discovery step."""
-        await self.async_set_unique_id(discovery_info.address)
-        self._abort_if_unique_id_configured()
-        device = SmartClimSensorData()
-        if not device.supported_data(discovery_info.advertisement):
-            return self.async_abort(reason="not_supported")
-        adv = BeeWiSmartClimAdvertisement(
-            discovery_info.device, discovery_info.advertisement
-        )
-        self._discovery_info = discovery_info
-        self._discovered_device = adv
-        return await self.async_step_bluetooth_confirm()
-
-    async def async_step_bluetooth_confirm(
-        self, user_input: dict[str, Any] | None = None
-    ) -> FlowResult:
-        """Confirm discovery."""
-        assert self._discovered_device is not None
-        adv = self._discovered_device
-        assert self._discovery_info is not None
-        discovery_info = self._discovery_info
-        title = adv.readings.name if adv.readings else discovery_info.name
-        if user_input is not None:
-            return self.async_create_entry(title=title, data={})
-
-        self._set_confirm_only()
-        placeholders = {"name": title}
-        self.context["title_placeholders"] = placeholders
-        return self.async_show_form(
-            step_id="bluetooth_confirm", description_placeholders=placeholders
-        )
-
     async def async_step_user(
         self, user_input: dict[str, Any] | None = None
     ) -> FlowResult:
         """Handle the user step to pick discovered device."""
+        _LOGGER.debug("async_step_user: %s", user_input)
+
+        if self._async_current_entries():
+            return self.async_abort(reason="Single instance allowed.")
+        if self.hass.data.get(DOMAIN):
+            return self.async_abort(reason="Single instance allowed.")
         if user_input is not None:
-            address = user_input[CONF_ADDRESS]
+            address = user_input[CONF_MAC]
             await self.async_set_unique_id(address, raise_on_progress=False)
             self._abort_if_unique_id_configured()
             return self.async_create_entry(
@@ -96,6 +72,10 @@ class SmartClimConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         return self.async_show_form(
             step_id="user",
             data_schema=vol.Schema(
-                {vol.Required(CONF_ADDRESS): vol.In(self._discovered_devices)}
+                {vol.Required(CONF_MAC): vol.In(self._discovered_devices)}
             ),
         )
+
+    async def async_step_import(self, import_info=None):
+        """Handle import from config file."""
+        return await self.async_step_user(import_info)

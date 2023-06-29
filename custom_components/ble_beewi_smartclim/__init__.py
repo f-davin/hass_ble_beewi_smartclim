@@ -1,41 +1,56 @@
-"""BeeWi SmartClim custom component."""
+"""The BeeWi SmartClim custom component."""
+
+from __future__ import annotations
 
 import logging
 
-from homeassistant.config_entries import SOURCE_IMPORT, ConfigEntry
+from homeassistant.components.bluetooth import BluetoothScanningMode
+from homeassistant.components.bluetooth.models import BluetoothServiceInfoBleak
+from homeassistant.components.bluetooth.passive_update_processor import (
+    PassiveBluetoothProcessorCoordinator,
+)
+from homeassistant.config_entries import ConfigEntry
+from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
+from smartclim_ble import BeeWiSmartClimAdvertisement
 
 from .const import DOMAIN
+
+PLATFORMS: list[Platform] = [Platform.SENSOR]
 
 _LOGGER = logging.getLogger(__name__)
 
 
-async def async_setup(hass: HomeAssistant, config: dict):
-    """Set up BeeWi SmartClim from configuration.yaml."""
-    _LOGGER.debug("async setup.")
-    _LOGGER.debug(" List entries for domain:")
-    _LOGGER.debug(hass.config_entries.async_entries(DOMAIN))
-
-    conf = config.get(DOMAIN)
-    if conf:
-        hass.async_create_task(
-            hass.config_entries.flow.async_init(
-                DOMAIN, data=conf, context={"source": SOURCE_IMPORT}
-            )
-        )
-
-    return True
+def _service_info_to_adv(
+    service_info: BluetoothServiceInfoBleak,
+) -> BeeWiSmartClimAdvertisement:
+    return BeeWiSmartClimAdvertisement(service_info.device, service_info.advertisement)
 
 
-async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry):
-    """Set up BeeWi SmartClim from a config entry."""
-    _LOGGER.debug(f"async setup entry: {entry.as_dict()}")
-    hass.async_create_task(
-        hass.config_entries.async_forward_entry_setup(entry, "light")
+async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
+    """Set up BeeWi SmartClim BLE device from a config entry."""
+    address = entry.unique_id
+    assert address is not None
+    coordinator = hass.data.setdefault(DOMAIN, {})[
+        entry.entry_id
+    ] = PassiveBluetoothProcessorCoordinator(
+        hass,
+        _LOGGER,
+        address=address,
+        mode=BluetoothScanningMode.PASSIVE,
+        update_method=_service_info_to_adv,
+    )
+    await hass.config_entries.async_forward_entry_setups(entry, PLATFORMS)
+    entry.async_on_unload(
+        # only start after all platforms have had a chance to subscribe
+        coordinator.async_start()
     )
     return True
 
-async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry):
+
+async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """Unload a config entry."""
-    _LOGGER.debug("async unload entry")
-    return await hass.config_entries.async_forward_entry_unload(entry, "light")
+    if unload_ok := await hass.config_entries.async_unload_platforms(entry, PLATFORMS):
+        hass.data[DOMAIN].pop(entry.entry_id)
+
+    return unload_ok
