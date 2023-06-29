@@ -5,7 +5,7 @@
       "connectable": false
     }
   ],
-  "codeowners": ["f-davin"],
+  "codeowners": ["@f-davin"],
   "config_flow": true,
   "dependencies": ["bluetooth_adapters"],
   "documentation": "https://github.com/f-davin/hass_ble_beewi_smartclim",
