@@ -26,33 +26,6 @@ from .coordinator import (
 )
 from .device import device_key_to_bluetooth_entity_key
 
-# SENSOR_DESCRIPTIONS: dict[str, SensorEntityDescription] = {
-#     "temperature": SensorEntityDescription(
-#         key="temperature",
-#         name="Temperature",
-#         device_class=SensorDeviceClass.TEMPERATURE,
-#         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
-#         state_class=SensorStateClass.MEASUREMENT,
-#         entity_category=EntityCategory.DIAGNOSTIC,
-#     ),
-#     "humidity": SensorEntityDescription(
-#         key="humidity",
-#         name="Humidity",
-#         device_class=SensorDeviceClass.HUMIDITY,
-#         native_unit_of_measurement=PERCENTAGE,
-#         state_class=SensorStateClass.MEASUREMENT,
-#         entity_category=EntityCategory.DIAGNOSTIC
-#     ),
-#     "battery": SensorEntityDescription(
-#         key="battery",
-#         name="Battery",
-#         device_class=SensorDeviceClass.BATTERY,
-#         native_unit_of_measurement=PERCENTAGE,
-#         state_class=SensorStateClass.MEASUREMENT,
-#         entity_category=EntityCategory.DIAGNOSTIC
-#     )
-# }
-
 SENSOR_DESCRIPTIONS = {
     (DeviceClass.BATTERY, Units.PERCENTAGE): SensorEntityDescription(
         key=f"{DeviceClass.BATTERY}_{Units.PERCENTAGE}",
@@ -67,17 +40,6 @@ SENSOR_DESCRIPTIONS = {
         native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
     ),
-    # (
-    #     DeviceClass.SIGNAL_STRENGTH,
-    #     Units.SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
-    # ): SensorEntityDescription(
-    #     key=f"{DeviceClass.SIGNAL_STRENGTH}_{Units.SIGNAL_STRENGTH_DECIBELS_MILLIWATT}",
-    #     device_class=SensorDeviceClass.SIGNAL_STRENGTH,
-    #     native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
-    #     state_class=SensorStateClass.MEASUREMENT,
-    #     entity_registry_enabled_default=False,
-    #     entity_category=EntityCategory.DIAGNOSTIC,
-    # ),
     (DeviceClass.TEMPERATURE, Units.TEMP_CELSIUS): SensorEntityDescription(
         key=f"{DeviceClass.TEMPERATURE}_{Units.TEMP_CELSIUS}",
         device_class=SensorDeviceClass.TEMPERATURE,

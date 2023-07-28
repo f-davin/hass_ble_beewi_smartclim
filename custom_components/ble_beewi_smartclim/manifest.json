@@ -14,6 +14,6 @@
   "iot_class": "local_push",
   "issue_tracker": "https://github.com/f-davin/hass_ble_beewi_smartclim/issues",
   "loggers": ["ble_beewi_smartclim"],
-  "requirements": ["beewi-smartclim-ble==0.3.0"],
+  "requirements": ["beewi-smartclim-ble==0.4.0"],
   "version": "1.0.0"
 }

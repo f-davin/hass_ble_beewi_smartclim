@@ -1,4 +1,4 @@
-"""The Xiaomi BLE integration."""
+"""The BeeWi SmartClim BLE integration."""
 from collections.abc import Callable, Coroutine
 from logging import Logger
 from typing import Any
@@ -31,7 +31,7 @@ class BeeWiSmartClimPassiveBluetoothProcessorCoordinator(PassiveBluetoothProcess
         discovered_device_classes: set[str],
         connectable: bool = False,
     ) -> None:
-        """Initialize the Xiaomi Bluetooth Active Update Processor Coordinator."""
+        """Initialize the BeeWi SmartClim Bluetooth Passive Update Processor Coordinator."""
         super().__init__(
             hass=hass,
             logger=logger,

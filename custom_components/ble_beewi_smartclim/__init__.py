@@ -36,7 +36,6 @@ def process_service_info(
     coordinator: PassiveBluetoothProcessorCoordinator = hass.data[DOMAIN][
         entry.entry_id
     ]
-    #discovered_device_classes = coordinator.discovered_device_classes
     if update.events:
         address = service_info.device.address
         for device_key, event in update.events.items():
@@ -52,25 +51,15 @@ def process_service_info(
             )
             event_class = event.device_key.key
             event_type = event.event_type
-
-            # if event_class not in discovered_device_classes:
-            #     discovered_device_classes.add(event_class)
-            #     hass.config_entries.async_update_entry(
-            #         entry,
-            #         data=entry.data
-            #         | {"known_events": list(discovered_device_classes)},
-            #     )
     return update
 
 
 async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
-    """Set up Xiaomi BLE device from a config entry."""
+    """Set up BeeWi SmartClim BLE device from a config entry."""
     address = entry.unique_id
     assert address is not None
 
     kwargs = {}
-    if bindkey := entry.data.get("bindkey"):
-        kwargs["bindkey"] = bytes.fromhex(bindkey)
     data = BeeWiSmartClimBluetoothDeviceData(**kwargs)
 
     device_registry = async_get(hass)
