@@ -2,13 +2,9 @@
 
 from __future__ import annotations
 
-from bleak.backends.device import BLEDevice
 from homeassistant import config_entries
 from homeassistant.components.bluetooth.passive_update_processor import (
-    PassiveBluetoothDataProcessor,
     PassiveBluetoothDataUpdate,
-    PassiveBluetoothEntityKey,
-    PassiveBluetoothProcessorCoordinator,
     PassiveBluetoothProcessorEntity,
 )
 from homeassistant.components.sensor import (
@@ -17,80 +13,104 @@ from homeassistant.components.sensor import (
     SensorEntityDescription,
     SensorStateClass,
 )
-from homeassistant.const import ATTR_NAME, PERCENTAGE, UnitOfTemperature, UnitOfTime
+from homeassistant.const import ATTR_NAME, PERCENTAGE, EntityCategory, UnitOfTemperature
 from homeassistant.core import HomeAssistant
-from homeassistant.helpers.entity import DeviceInfo
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
-from smartclim_ble import BeeWiSmartClimAdvertisement
+from homeassistant.helpers.sensor import sensor_device_info_to_hass_device_info
+from smartclim_ble import DeviceClass, SensorUpdate, Units
 
 from .const import DOMAIN
+from .coordinator import (
+    BeeWiSmartClimPassiveBluetoothDataProcessor,
+    BeeWiSmartClimPassiveBluetoothProcessorCoordinator,
+)
+from .device import device_key_to_bluetooth_entity_key
 
-SENSOR_DESCRIPTIONS: dict[str, SensorEntityDescription] = {
-    "temperature": SensorEntityDescription(
-        key="temperature",
-        name="Temperature",
-        device_class=SensorDeviceClass.TEMPERATURE,
-        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+# SENSOR_DESCRIPTIONS: dict[str, SensorEntityDescription] = {
+#     "temperature": SensorEntityDescription(
+#         key="temperature",
+#         name="Temperature",
+#         device_class=SensorDeviceClass.TEMPERATURE,
+#         native_unit_of_measurement=UnitOfTemperature.CELSIUS,
+#         state_class=SensorStateClass.MEASUREMENT,
+#         entity_category=EntityCategory.DIAGNOSTIC,
+#     ),
+#     "humidity": SensorEntityDescription(
+#         key="humidity",
+#         name="Humidity",
+#         device_class=SensorDeviceClass.HUMIDITY,
+#         native_unit_of_measurement=PERCENTAGE,
+#         state_class=SensorStateClass.MEASUREMENT,
+#         entity_category=EntityCategory.DIAGNOSTIC
+#     ),
+#     "battery": SensorEntityDescription(
+#         key="battery",
+#         name="Battery",
+#         device_class=SensorDeviceClass.BATTERY,
+#         native_unit_of_measurement=PERCENTAGE,
+#         state_class=SensorStateClass.MEASUREMENT,
+#         entity_category=EntityCategory.DIAGNOSTIC
+#     )
+# }
+
+SENSOR_DESCRIPTIONS = {
+    (DeviceClass.BATTERY, Units.PERCENTAGE): SensorEntityDescription(
+        key=f"{DeviceClass.BATTERY}_{Units.PERCENTAGE}",
+        device_class=SensorDeviceClass.BATTERY,
+        native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
+        entity_category=EntityCategory.DIAGNOSTIC,
     ),
-    "humidity": SensorEntityDescription(
-        key="humidity",
-        name="Humidity",
+    (DeviceClass.HUMIDITY, Units.PERCENTAGE): SensorEntityDescription(
+        key=f"{DeviceClass.HUMIDITY}_{Units.PERCENTAGE}",
         device_class=SensorDeviceClass.HUMIDITY,
         native_unit_of_measurement=PERCENTAGE,
         state_class=SensorStateClass.MEASUREMENT,
     ),
-    "battery": SensorEntityDescription(
-        key="battery",
-        name="Battery",
-        device_class=SensorDeviceClass.BATTERY,
-        native_unit_of_measurement=PERCENTAGE,
+    # (
+    #     DeviceClass.SIGNAL_STRENGTH,
+    #     Units.SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+    # ): SensorEntityDescription(
+    #     key=f"{DeviceClass.SIGNAL_STRENGTH}_{Units.SIGNAL_STRENGTH_DECIBELS_MILLIWATT}",
+    #     device_class=SensorDeviceClass.SIGNAL_STRENGTH,
+    #     native_unit_of_measurement=SIGNAL_STRENGTH_DECIBELS_MILLIWATT,
+    #     state_class=SensorStateClass.MEASUREMENT,
+    #     entity_registry_enabled_default=False,
+    #     entity_category=EntityCategory.DIAGNOSTIC,
+    # ),
+    (DeviceClass.TEMPERATURE, Units.TEMP_CELSIUS): SensorEntityDescription(
+        key=f"{DeviceClass.TEMPERATURE}_{Units.TEMP_CELSIUS}",
+        device_class=SensorDeviceClass.TEMPERATURE,
+        native_unit_of_measurement=UnitOfTemperature.CELSIUS,
         state_class=SensorStateClass.MEASUREMENT,
-    )
+    ),
 }
 
-
-def _device_key_to_bluetooth_entity_key(
-    device: BLEDevice,
-    key: str,
-) -> PassiveBluetoothEntityKey:
-    """Convert a device key to an entity key."""
-    return PassiveBluetoothEntityKey(key, device.address)
-
-
-def _sensor_device_info_to_hass(
-    adv: BeeWiSmartClimAdvertisement,
-) -> DeviceInfo:
-    """Convert a sensor device info to hass device info."""
-    hass_device_info = DeviceInfo({})
-    if adv.readings and adv.readings.name:
-        hass_device_info[ATTR_NAME] = adv.readings.name
-    return hass_device_info
-
-
 def sensor_update_to_bluetooth_data_update(
-    adv: BeeWiSmartClimAdvertisement,
+    sensor_update: SensorUpdate,
 ) -> PassiveBluetoothDataUpdate:
-    """Convert a sensor update to a Bluetooth data update."""
-    entity_names: dict[PassiveBluetoothEntityKey, str | None] = {}
-    for key, desc in SENSOR_DESCRIPTIONS.items():
-        entity_names[_device_key_to_bluetooth_entity_key(adv.device, key)] = desc.name
-
+    """Convert a sensor update to a bluetooth data update."""
     return PassiveBluetoothDataUpdate(
-        devices={adv.device.address: _sensor_device_info_to_hass(adv)},
+        devices={
+            device_id: sensor_device_info_to_hass_device_info(device_info)
+            for device_id, device_info in sensor_update.devices.items()
+        },
         entity_descriptions={
-            _device_key_to_bluetooth_entity_key(adv.device, key): desc
-            for key, desc in SENSOR_DESCRIPTIONS.items()
+            device_key_to_bluetooth_entity_key(device_key): SENSOR_DESCRIPTIONS[
+                (description.device_class, description.native_unit_of_measurement)
+            ]
+            for device_key, description in sensor_update.entity_descriptions.items()
+            if description.native_unit_of_measurement
         },
         entity_data={
-            _device_key_to_bluetooth_entity_key(adv.device, key): getattr(
-                adv.readings, key, None
-            )
-            for key in SENSOR_DESCRIPTIONS
+            device_key_to_bluetooth_entity_key(device_key): sensor_values.native_value
+            for device_key, sensor_values in sensor_update.entity_values.items()
         },
-        entity_names=entity_names,
+        entity_names={
+            device_key_to_bluetooth_entity_key(device_key): sensor_values.name
+            for device_key, sensor_values in sensor_update.entity_values.items()
+        },
     )
-
 
 async def async_setup_entry(
     hass: HomeAssistant,
@@ -98,25 +118,34 @@ async def async_setup_entry(
     async_add_entities: AddEntitiesCallback,
 ) -> None:
     """Set up the BeeWi SmartClim BLE sensors."""
-    coordinator: PassiveBluetoothProcessorCoordinator = hass.data[DOMAIN][
+    coordinator: BeeWiSmartClimPassiveBluetoothProcessorCoordinator = hass.data[DOMAIN][
         entry.entry_id
     ]
-
-    processor = PassiveBluetoothDataProcessor(sensor_update_to_bluetooth_data_update)
+    processor = BeeWiSmartClimPassiveBluetoothDataProcessor(
+        sensor_update_to_bluetooth_data_update
+    )
     entry.async_on_unload(
         processor.async_add_entities_listener(
-            BeeWiSmartClimBluetoothSensorEntity, async_add_entities
+            SmartClimBluetoothSensorEntity, async_add_entities
         )
     )
     entry.async_on_unload(coordinator.async_register_processor(processor))
 
-
-class BeeWiSmartClimBluetoothSensorEntity(
-    PassiveBluetoothProcessorEntity, SensorEntity
+class SmartClimBluetoothSensorEntity(
+    PassiveBluetoothProcessorEntity[BeeWiSmartClimPassiveBluetoothDataProcessor],
+    SensorEntity,
 ):
-    """Representation of an BeeWi SmartClim BLE sensor."""
+    """Representation of a BeeWi SmartClim ble sensor."""
 
     @property
-    def native_value(self) -> float | int | str | None:
+    def native_value(self) -> int | float | None:
         """Return the native value."""
         return self.processor.entity_data.get(self.entity_key)
+
+    @property
+    def available(self) -> bool:
+        """Return True if entity is available."""
+        coordinator: BeeWiSmartClimPassiveBluetoothProcessorCoordinator = (
+            self.processor.coordinator
+        )
+        return coordinator.available or super().available
