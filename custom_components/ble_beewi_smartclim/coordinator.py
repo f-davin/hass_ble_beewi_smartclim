@@ -13,7 +13,7 @@ from homeassistant.components.bluetooth.passive_update_processor import (
 )
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.debounce import Debouncer
-from smartclim_ble import XiaomiBluetoothDeviceData
+from smartclim_ble import BeeWiSmartClimBluetoothDeviceData
 
 
 class BeeWiSmartClimPassiveBluetoothProcessorCoordinator(PassiveBluetoothProcessorCoordinator):
@@ -27,7 +27,7 @@ class BeeWiSmartClimPassiveBluetoothProcessorCoordinator(PassiveBluetoothProcess
         address: str,
         mode: BluetoothScanningMode,
         update_method: Callable[[BluetoothServiceInfoBleak], Any],
-        device_data: XiaomiBluetoothDeviceData,
+        device_data: BeeWiSmartClimBluetoothDeviceData,
         discovered_device_classes: set[str],
         connectable: bool = False,
     ) -> None:

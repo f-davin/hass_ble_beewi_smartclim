@@ -14,7 +14,7 @@ from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.device_registry import DeviceRegistry, async_get
-from smartclim_ble import SensorUpdate, XiaomiBluetoothDeviceData
+from smartclim_ble import BeeWiSmartClimBluetoothDeviceData, SensorUpdate
 
 from .const import DOMAIN
 
@@ -26,7 +26,7 @@ _LOGGER = logging.getLogger(__name__)
 def process_service_info(
     hass: HomeAssistant,
     entry: config_entries.ConfigEntry,
-    data: XiaomiBluetoothDeviceData,
+    data: BeeWiSmartClimBluetoothDeviceData,
     service_info: BluetoothServiceInfoBleak,
     device_registry: DeviceRegistry,
 ) -> SensorUpdate:
@@ -71,7 +71,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     kwargs = {}
     if bindkey := entry.data.get("bindkey"):
         kwargs["bindkey"] = bytes.fromhex(bindkey)
-    data = XiaomiBluetoothDeviceData(**kwargs)
+    data = BeeWiSmartClimBluetoothDeviceData(**kwargs)
 
     device_registry = async_get(hass)
     coordinator = hass.data.setdefault(DOMAIN, {})[

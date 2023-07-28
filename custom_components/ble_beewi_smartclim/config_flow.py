@@ -18,7 +18,7 @@ from homeassistant.components.bluetooth import (
 from homeassistant.config_entries import ConfigFlow
 from homeassistant.const import CONF_ADDRESS
 from homeassistant.data_entry_flow import FlowResult
-from smartclim_ble import XiaomiBluetoothDeviceData as DeviceData
+from smartclim_ble import BeeWiSmartClimBluetoothDeviceData as DeviceData
 import voluptuous as vol
 
 from .const import DOMAIN
